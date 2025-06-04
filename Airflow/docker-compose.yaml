@@ -1,0 +1,173 @@
+version: '3.8'
+
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: postgres-airflow-DB
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+    networks:
+      - proyecto_net
+    restart: always
+
+  airflow-init:
+    image: apache/airflow:2.8.1
+    depends_on:
+      - postgres
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    volumes:
+      - /home/illidan/proyecto_desde0/Airflow/dags:/opt/airflow/dags
+      - /home/illidan/proyecto_desde0/Airflow/logs:/opt/airflow/logs
+      - /home/illidan/proyecto_desde0/Airflow/plugins:/opt/airflow/plugins
+      - /var/run/docker.sock:/var/run/docker.sock           # permite DockerOperator
+    entrypoint: >
+      bash -c "
+        airflow db migrate &&
+        airflow users create --username airflow --firstname Admin --lastname User --role Admin --email admin@example.com --password airflow
+      "
+    restart: on-failure
+    networks:
+      - proyecto_net
+
+  airflow-webserver:
+    image: apache/airflow:2.8.1
+    user: root
+    depends_on:
+      - postgres
+      - airflow-init
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'false'
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    volumes:
+      - /home/illidan/proyecto_desde0/Airflow/dags:/opt/airflow/dags
+      - /home/illidan/proyecto_desde0/Airflow/logs:/opt/airflow/logs
+      - /home/illidan/proyecto_desde0/Airflow/plugins:/opt/airflow/plugins
+      - /var/run/docker.sock:/var/run/docker.sock           # permite DockerOperator
+    ports:
+      - "8080:8080"
+    command: webserver
+    restart: always
+    networks:
+      - proyecto_net
+
+  airflow-scheduler:
+    image: apache/airflow:2.8.1
+    user: root
+    depends_on:
+      - airflow-webserver
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    volumes:
+      - /home/illidan/proyecto_desde0/Airflow/dags:/opt/airflow/dags
+      - /home/illidan/proyecto_desde0/Airflow/logs:/opt/airflow/logs
+      - /home/illidan/proyecto_desde0/Airflow/plugins:/opt/airflow/plugins
+      - /var/run/docker.sock:/var/run/docker.sock           # permite DockerOperator
+    command: scheduler
+    restart: always
+    networks:
+      - proyecto_net
+
+  spark-master:
+    build:
+      context: /home/illidan/proyecto_desde0/spark
+      dockerfile: Dockerfile-master
+    container_name: spark-master
+    environment:
+      - SPARK_MODE=master
+    ports:
+      - "7077:7077"   # puerto del master
+      - "8081:8080"   # UI de Spark
+    networks:
+      - proyecto_net
+
+  spark-worker:
+    build:
+      context: /home/illidan/proyecto_desde0/spark
+      dockerfile: Dockerfile-worker
+    container_name: spark-worker
+    volumes:
+      - /home/illidan/proyecto_desde0/spark/scripts:/opt/spark-app
+      - /home/illidan/proyecto_desde0/spark/Config_file:/opt/spark/Config_file
+      - /home/illidan/proyecto_desde0/spark/archivos:/opt/spark/archivos
+      - /home/illidan/proyecto_desde0/spark/archivos_parquet:/opt/spark/archivos_parquet
+      - /home/illidan/proyecto_desde0/ETL:/opt/ETL
+      - /home/illidan/proyecto_desde0/postgre/jars:/opt/postgre/jars
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+    depends_on:
+      - spark-master
+    networks:
+      - proyecto_net
+
+
+  spark-submit:
+    build:
+      context: /home/illidan/proyecto_desde0/spark    # usa tu Dockerfile-spark que instala pyspark
+      dockerfile: Dockerfile-spark
+    image: spark-job:latest
+    container_name: spark-submit
+    # No defines ENTRYPOINT ni CMD aquí: lo tomas de tu Dockerfile
+    volumes:
+      - /home/illidan/proyecto_desde0/spark/scripts:/opt/spark-app  # monta tus .py
+      - /home/illidan/proyecto_desde0/spark/Config_file:/opt/spark/Config_file
+      - /home/illidan/proyecto_desde0/spark/archivos:/opt/spark/archivos
+      - /home/illidan/proyecto_desde0/spark/archivos_parquet:/opt/spark/archivos_parquet
+      - /home/illidan/proyecto_desde0/ETL:/opt/ETL
+      - /home/illidan/proyecto_desde0/postgre/jars:/opt/postgre/jars
+    networks:
+      - proyecto_net
+    environment:
+      - HOME=/opt/spark
+      - SPARK_JARS_IVY=/opt/spark/.ivy2
+    depends_on:
+      - spark-master
+      - spark-worker
+    command: > 
+      tail -f /dev/null
+#      /opt/bitnami/spark/bin/spark-submit
+#      --master spark://spark-master:7077
+#      --jars /opt/postgre/jars/postgresql-42.7.4.jar
+#######################BORRAR############################################
+
+
+
+  
+  postgres-Spark-DB:
+    image: postgres:15
+    container_name: postgres-spark-DB
+    environment:
+      POSTGRES_USER: spark
+      POSTGRES_PASSWORD: spark
+      POSTGRES_DB: sparkdb
+    volumes:
+      - postgres-spark-db-volume:/var/lib/postgresql/data
+      - /home/illidan/proyecto_desde0/postgre/jars:/opt/postgre/jars
+
+      
+    ports:
+      - "5433:5432"
+    networks:
+      - proyecto_net
+    restart: always
+
+
+
+networks:
+  proyecto_net:
+    driver: bridge
+    name: proyecto_net
+
+volumes:
+  postgres-db-volume:
+  postgres-spark-db-volume:

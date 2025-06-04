@@ -1,0 +1,110 @@
+from airflow import DAG
+from airflow.providers.docker.operators.docker import DockerOperator
+from datetime import datetime
+from docker.types import Mount
+
+default_args = {
+    'start_date': datetime(2024, 1, 1),
+    'retries': 1,
+}
+
+with DAG(
+    dag_id='Flights_ETL_Load',
+    default_args=default_args,
+    schedule_interval='@daily',
+    catchup=False,
+) as dag:
+
+
+    run_etl = DockerOperator(
+        task_id='run_Airflow_Job',
+        image='spark-job:latest',
+        api_version='auto',
+        auto_remove=True,
+        docker_url='unix://var/run/docker.sock',
+        entrypoint=['bash', '-c'], ####
+        network_mode='proyecto_net',
+        command=(
+            'export HOME=/home/airflow && '
+            'spark-submit '
+            '--conf spark.jars.ivy=$HOME/.ivy2 '
+            '--master spark://spark-master:7077 '
+            '--deploy-mode client '
+        ),
+        mounts=[
+            Mount(source='/var/run/docker.sock',
+                  target='/var/run/docker.sock',
+                  type='bind'),
+            Mount(source='/home/illidan/proyecto_desde0',
+                  target='/home/illidan/proyecto_desde0',
+                  type='bind'),
+        ],
+        environment={'HOME': '/home/airflow'},
+        mount_tmp_dir=False,
+    )
+
+
+    run_spark_job = DockerOperator(
+        task_id='run_spark_job',
+        image='spark-job:latest',
+        api_version='auto',
+        auto_remove=True,
+        docker_url='unix://var/run/docker.sock',
+
+        network_mode='proyecto_net',
+        working_dir='/opt/spark-app',
+
+        entrypoint=['/opt/bitnami/spark/bin/spark-submit'],
+
+
+        command=[
+            '--conf', 'spark.jars.ivy=/home/airflow/.ivy2',
+            '--master', 'spark://spark-master:7077',
+            '--deploy-mode', 'client',
+            '/opt/spark-app/Load.py'
+        ],
+
+
+        mounts=[
+            Mount(source='/var/run/docker.sock', target='/var/run/docker.sock', type='bind'),
+            
+            Mount(source='/home/illidan/proyecto_desde0/spark/scripts', 
+                target='/opt/spark-app', 
+                type='bind',
+                read_only=True
+            ),
+            Mount(source='/home/illidan/proyecto_desde0/spark/Config_file', 
+                target='/opt/spark/Config_file', 
+                type='bind', read_only=True
+            ),
+            Mount(source='/home/illidan/proyecto_desde0/spark/archivos', 
+                target='/opt/spark/archivos', 
+                type='bind'
+            ),
+            
+            Mount(source='/home/illidan/proyecto_desde0/spark/archivos_parquet', 
+                target='/opt/spark/archivos_parquet', 
+                type='bind'
+            ),
+            Mount(source='/home/illidan/proyecto_desde0/ETL', 
+                target='/opt/ETL', 
+                type='bind'
+            ),
+            Mount(source='/home/illidan/proyecto_desde0/postgre/jars', 
+                target='/opt/postgre/jars', 
+                type='bind'
+            )
+        ],
+
+
+        user='root',
+        environment={
+            'HOME': '/home/airflow',
+            'SPARK_JARS_IVY': '/home/airflow/.ivy2'
+        },
+
+        mount_tmp_dir=False,
+    )
+
+
+    run_etl >> run_spark_job

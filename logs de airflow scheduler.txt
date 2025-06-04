@@ -1,0 +1,8 @@
+docker-compose logs -f airflow-scheduler
+
+-logs del docker compose
+----docker-compose logs spark-submit
+
+-ver carpetas denrto del docker
+----docker exec -it <nombre del contenedor> bash
+----ls /opt/spark/Config_file

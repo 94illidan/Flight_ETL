@@ -1,0 +1,8 @@
+FROM bitnami/spark:3.5.0
+
+USER root
+
+ENV SPARK_MODE=worker
+ENV SPARK_MASTER_URL=spark://spark-master:7077
+
+CMD ["/bin/bash", "-c", "/opt/bitnami/spark/sbin/start-worker.sh $SPARK_MASTER_URL"]

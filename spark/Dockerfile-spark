@@ -1,0 +1,15 @@
+# spark/Dockerfile-spark
+FROM bitnami/spark:3.5.0
+USER root
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
+
+# Definimos un HOME válido y creamos el repositorio Ivy
+RUN mkdir -p /opt/spark/.ivy2/local && chown -R 1001:1001 /opt/spark
+
+ENV HOME=/opt/spark
+ENV SPARK_JARS_IVY=/opt/spark/.ivy2
+ENV SPARK_ALLOW_RUN_AS_ROOT=1
+
+WORKDIR /opt/spark-app
+

@@ -1,0 +1,11 @@
+#file_path
+path:
+  path_vuelos: "/home/illidan/proyecto_desde0/archivos/flights.csv"
+  Path_aerolineas: "/home/illidan/proyecto_desde0/archivos/airlines.csv"
+  path_aeropuertos: "/home/illidan/proyecto_desde0/archivos/airports.csv"
+Parquet_file:
+  df_airline: "/home/illidan/proyecto_desde0/archivos_parquet/df_airline"
+  df_flights: "/home/illidan/proyecto_desde0/archivos_parquet/df_flights"
+  df_airports: "/home/illidan/proyecto_desde0/archivos_parquet/df_airports"
+Dags:
+  dag_path: "/opt/airflow/dags/"

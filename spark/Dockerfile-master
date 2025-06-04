@@ -1,0 +1,6 @@
+# spark/Dockerfile-master
+FROM bitnami/spark:3.5.0
+USER root
+RUN pip install --no-cache-dir pyspark==3.5.3
+USER 1001
+ENTRYPOINT ["/opt/bitnami/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"]
