@@ -3,6 +3,7 @@ archivos_parquet/*
 archivos/*
 Airflow/logs/*
 Airflow/pgdata/*
+Airflow/Config_file/*
 spark/archivos/*
 spark/Config_file/*
 spark/archivos_parquet/*
