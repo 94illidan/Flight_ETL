@@ -89,8 +89,7 @@ try:
                                 .groupBy(df_flights.DESTINATION_AIRPORT, df_airline.AIRLINE) \
                                     .agg(count(df_flights.AIRLINE).alias("Count_visit_per_airline")) \
                                 .orderBy(asc(df_flights.DESTINATION_AIRPORT)) \
-                                .select(df_flights.DESTINATION_AIRPORT, df_airline.AIRLINE,"Count_visit_per_airline") \
-                                .limit(100)
+                                .select(df_flights.DESTINATION_AIRPORT, df_airline.AIRLINE,"Count_visit_per_airline")
 except Exception as error:
     logger.error("Error variable airline_in_airport:" + str(error))
     logger.error(traceback.format_exc())
@@ -104,8 +103,7 @@ try:
                                 .repartition(col("AIRLINE"), col("DESTINATION_AIRPORT")) \
                                 .groupBy(col("AIRLINE"), col("DESTINATION_AIRPORT")) \
                                     .agg(count(col("AIRLINE")).alias("count_airlines_cancel")) \
-                                .orderBy(desc("DESTINATION_AIRPORT")) \
-                                .limit(100)
+                                .orderBy(desc("DESTINATION_AIRPORT"))
 except Exception as error:
     logger.error("Error variable flights_per_cancell:" + str(error))
     logger.error(traceback.format_exc())
