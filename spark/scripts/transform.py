@@ -99,7 +99,7 @@ except Exception as error:
 try:
     window_spec = Window.partitionBy("DESTINATION_AIRPORT").orderBy(desc("Count_visit_per_airline"))
     
-    Rank_airline_in_airport = airline_in_airport.withColumn("Ranking", rank().over(window_spec))
+    Rank_airline_in_airport = airline_in_airport.withColumn("ranking", rank().over(window_spec))
 
 
 except Exception as error:
