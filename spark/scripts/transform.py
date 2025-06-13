@@ -3,7 +3,8 @@ import sys
 import yaml
 import traceback
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import avg, col, max, min, count, broadcast, desc, asc, when, lit
+from pyspark.sql.functions import avg, col, max, min, count, broadcast, desc, asc, when, rank, round
+from pyspark.sql.window import Window
 from pyspark.sql.types import StringType, IntegerType, FloatType
 
 # %%
@@ -95,6 +96,18 @@ except Exception as error:
     logger.error(traceback.format_exc())
     errores_detectados.append(str(e))
 
+try:
+    window_spec = Window.partitionBy("DESTINATION_AIRPORT").orderBy(desc("Count_visit_per_airline"))
+    
+    Rank_airline_in_airport = airline_in_airport.withColumn("Ranking", rank().over(window_spec))
+
+
+except Exception as error:
+    logger.error("Error Rank_airline_in_airport:" + str(error))
+    logger.error(traceback.format_exc())
+    errores_detectados.append(str(e))
+
+
 # %%
 try:
     #mention how many times an airline visit a destination and canceled this arrival
@@ -125,7 +138,7 @@ except Exception as error:
 try:
     avg_flight.write.parquet(config["Parquet_file"]["avg_flight"], mode="overwrite")
 
-    airline_in_airport.write.parquet(config["Parquet_file"]["airline_in_airport"], mode="overwrite")
+    Rank_airline_in_airport.write.parquet(config["Parquet_file"]["airline_in_airport"], mode="overwrite")
 
     flights_per_cancell.write.parquet(config["Parquet_file"]["flights_per_cancell"], mode="overwrite")
 
