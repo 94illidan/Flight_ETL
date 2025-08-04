@@ -7,3 +7,4 @@ Airflow/Config_file/*
 spark/archivos/*
 spark/Config_file/*
 spark/archivos_parquet/*
+ETL/GCP/Files/*
