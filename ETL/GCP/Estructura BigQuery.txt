@@ -1,0 +1,24 @@
+schema Flight2015_prod
+
+CREATE TABLE Flight2015_prod.avg_flight (
+  AIRLINE_Name STRING,
+  avg_DISTANCE FLOAT64
+);
+
+CREATE TABLE Flight2015_prod.flights_cancellation (
+  AIRLINE STRING,
+  DESTINATION_AIRPORT STRING,
+  count_airlines_cancel INT64
+);
+
+CREATE TABLE Flight2015_prod.airline_in_airport (
+  DESTINATION_AIRPORT STRING,
+  AIRLINE STRING,
+  Count_visit_per_airline INT64,
+  ranking INT64
+);
+
+CREATE TABLE Flight2015_prod.airport_notin_thelist (
+  DESTINATION_AIRPORT STRING,
+  Count_airports INT64
+);
