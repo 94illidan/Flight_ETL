@@ -9,3 +9,7 @@ flight2015dataset
         -flights_per_cancell/
     -ETL
         -GCP_Transform.py
+    
+
+    bucket
+    flight2015dataset-temp
